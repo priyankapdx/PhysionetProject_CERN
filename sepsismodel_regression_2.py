@@ -14,7 +14,7 @@ from mat4py import loadmat
 #save('all_patient_data_vital_signs.mat',-v7)
 
 import keras.backend as K
-
+import matplotlib.pyplot as plt
 def r2(y_true,y_pred):
     SS_res=K.sum(K.square(y_true-y_pred))
     SS_tot=K.sum(K.square(y_true-K.mean(y_true)))
@@ -58,7 +58,7 @@ for i in range(0,d):
             y_train_1[i]=g
 y_train=y_train_1[0:3000]
 y_validation=y_train_1[3001:-1]
-#print(y_train[0:100])
+print(y_train[0:100])
 #print(x_train.shape)
 #print(y_train.shape)
 #print(y_train[-5:-1,0:])
@@ -70,7 +70,7 @@ def sepsis_validation_function(y_actual, y_prediction):
     t_diff=y_prediction[0:,0] - y_actual
     #print(y_prediction.shape)
     #print(y_actual.shape)
-    #print(t_diff.shape)
+    print(t_diff.shape)
     accuracy=np.zeros(len(t_diff))
 
     for p in range (0,len(t_diff)):
@@ -118,12 +118,14 @@ model.compile(
     metrics=['accuracy']
 )
 
-model.fit(x_train,
+history=model.fit(x_train,
     y_train,
-    epochs=200,
+    epochs=1,
     batch_size=1,
     validation_data=(x_validation,y_validation))
 
+plt.plot(history.history["loss"], label="training loss")
+plt.plot(history.history["val_loss"], label="validation loss")
 score=model.evaluate(x_validation,y_validation, verbose=0)
 print('Test Loss:', score[0])
 print('Test Accuracy:', score[1])
