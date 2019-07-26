@@ -23,15 +23,15 @@ import keras.backend as K
 #    return (1-SS_res/(SS_tot+K.epsilon()))
 
 #Data Preprocessing
-data = scipy.io.loadmat("missing_data_filled")
-data=data['missing_data_filled']
+data = scipy.io.loadmat("normalized_all_data")
+data=data['normalized']
 data=np.array(data)
 #print(data.shape)
 np.random.shuffle(data)
 
 #print(data.shape)
 x_train=(data[0:,0:,0:-1])
-x_train=x_train.reshape([-1,4020, 43,8])
+#x_train=x_train.reshape([0,4020,43,8])
 print(x_train.shape)
 #print(data[0:20,0:,-1])
 #x_validation=(data[3001:-1,0:,0:-1])
@@ -67,7 +67,8 @@ for i in range(0,d):
         else:
             y_train_index[i]=0
 
-
+print(y_train_index)
+print(y_train_sepsis)
 #y_train=y_train_1[0:3000]
 #y_validation=y_train_1[3001:-1]
 #print(y_train[0:100])
@@ -105,9 +106,9 @@ def sepsis_validation_function(y_actual, y_prediction):
     #print(percent_sepsis_detected)  
 
 #model = Model()
-print(x_train.shape)
-input_layer=Input(shape=(4020,43,8))
-print(input_layer)
+#print(len(x_train))
+input_layer=Input(shape=(43,8))
+#print(input_layer)
 x= Dense(256, batch_size=1, input_shape=(43,8), activation='relu')(input_layer) #x_train change to match what you want; paper used tanh activation
 x=Dropout(0.2)(x)
 
@@ -127,7 +128,7 @@ dnn_out=dnn(input_layer)
 
 
 sepsis_flag=Dense(1, activation='sigmoid')(dnn_out) #model.add(TimeDistributed(Dense(1, activation='sigmoid')))
-sepsis_index=Dense(1, activation='linear')(dnn_out)
+sepsis_index=Dense(1, activation='relu')(dnn_out)
 sepsis_model=Model(inputs=input_layer, outputs=[sepsis_flag, sepsis_index])
 #return Model(input=input_shape, output=[sepsis_flag, sepsis_index])
 sepsis_model.summary()
@@ -136,19 +137,21 @@ opt=tf.keras.optimizers.Adam(lr=0.000001, decay=1e-6)
 sepsis_model.compile(
     optimizer=opt,
     loss=['binary_crossentropy','mean_squared_error'],
-    #loss_weights=[]
+    metrics=['accuracy']
+    #loss_weights=[0, 1]
 )
 
 history= sepsis_model.fit(x_train,
     [y_train_sepsis,y_train_index],
-    [sepsis_flag,sepsis_index],
-    epochs=100)
-    #batch_size=1)
+    epochs=5,
+    batch_size=1,
+    validation_split=0.2,
+    )
     #validation_data=(x_validation,y_validation))
 
 #score=sepsis_model.evaluate(x_validation,y_validation, verbose=0)
-print('Test Loss:', score[0])
-print('Test Accuracy:', score[1])
+#print('Test Loss:', score[0])
+#print('Test Accuracy:', score[1])
 
 
 #outputTensor = model.output
