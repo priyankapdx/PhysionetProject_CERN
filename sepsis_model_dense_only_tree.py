@@ -31,6 +31,7 @@ np.random.shuffle(data)
 
 #print(data.shape)
 x_train=(data[0:,0:,0:-1])
+print(x_train[:9,:,:])
 #x_train=x_train.reshape([0,4020,43,8])
 print(x_train.shape)
 #print(data[0:20,0:,-1])
@@ -58,17 +59,17 @@ for i in range(0,d):
         if len(slice_indices)>0:
             index=slice_indices[0]
             #print(index)
-            y_train_sepsis[i]=index
+            y_train_index[i]=index
         else:
-            y_train_sepsis[i]=g
+            y_train_index[i]=g
         
         if np.sum(slice_indices)>0:
-            y_train_index[i]=1
+            y_train_sepsis[i]=1
         else:
-            y_train_index[i]=0
+            y_train_sepsis[i]=0
 
-print(y_train_index)
-print(y_train_sepsis)
+print(y_train_index[0:100])
+print(y_train_sepsis[0:100])
 #y_train=y_train_1[0:3000]
 #y_validation=y_train_1[3001:-1]
 #print(y_train[0:100])
@@ -119,6 +120,9 @@ x=Dropout(0.2)(x)
 x=Dense(64, activation='relu')(x)
 x=Dropout(0.2)(x)
 
+x=Dense(64, activation='relu')(x)
+x=Dropout(0.2)(x)
+
 x=Dense(32, activation='relu')(x)
 h=Flatten()(x)
 
@@ -143,12 +147,19 @@ sepsis_model.compile(
 
 history= sepsis_model.fit(x_train,
     [y_train_sepsis,y_train_index],
-    epochs=5,
+    epochs=10,
     batch_size=1,
     validation_split=0.2,
     )
     #validation_data=(x_validation,y_validation))
 
+output=sepsis_model.predict(x_train, batch_size=1)
+print(np.amax(output[0]))
+print(np.amin(output[0]))
+print(np.amax(y_train_sepsis))
+print(np.amin(y_train_sepsis))
+print(np.amax(y_train_index))
+print(np.amin(y_train_index))
 #score=sepsis_model.evaluate(x_validation,y_validation, verbose=0)
 #print('Test Loss:', score[0])
 #print('Test Accuracy:', score[1])
@@ -164,11 +175,11 @@ plt.plot(history.history["val_loss"], label="validation loss")
 plt.legend()
 plt.show()
 
-y_actual=y_train
-y_prediction=((sepsis_model.predict(x_train, batch_size=1)) > 0.5).astype(int)
-y_prediction_1=sepsis_model.predict(x_train, batch_size=1)
+#y_actual=y_train
+#y_prediction=((sepsis_model.predict(x_train, batch_size=1)) > 0.5).astype(int)
+#y_prediction_1=sepsis_model.predict(x_train, batch_size=1)
 #print(y_prediction.shape)
 #print(y_prediction[0:10,0:42,0:])
 #print(y_prediction_1.shape)
 #print(y_prediction_1)
-sepsis_validation_function(y_actual,y_prediction)
+#sepsis_validation_function(y_actual,y_prediction)
