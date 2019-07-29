@@ -29,9 +29,13 @@ data=np.array(data)
 #print(data.shape)
 np.random.shuffle(data)
 
+validation=scipy.io.loadmat("validation_normalized")
+validation=validation['normalized']
+validation=np.array(validation)
+
 #print(data.shape)
 x_train=(data[0:,0:,0:-1])
-print(x_train[:9,:,:])
+#print(x_train[:9,:,:])
 #x_train=x_train.reshape([0,4020,43,8])
 print(x_train.shape)
 #print(data[0:20,0:,-1])
@@ -79,6 +83,42 @@ print(y_train_sepsis[0:100])
 #print(x_train[1,0:,0:])
 
 #Validation model
+#################################################################
+
+validation_x=(validation[0:,0:,0:-1])
+[f,g,h]=validation.shape
+y_val_initial=np.array(validation[0:,0:,-1])
+[d,e]=y_val_initial.shape
+print('hi')
+#print(y_train_initial[0:20,:])
+#print(y_train_initial.shape)
+y_val_sepsis=np.zeros(d)
+y_val_index=np.zeros(d)
+
+
+for i in range(0,d):
+        output_slice=y_train_initial[i,:]
+        #print(output_slice_pred)
+        slice_indices=np.flatnonzero(output_slice)
+        #print(len(slice_indices))
+        #print(slice_indices)
+        if len(slice_indices)>0:
+            index=slice_indices[0]
+            #print(index)
+            y_val_index[i]=index
+        else:
+            y_val_index[i]=g
+        
+        if np.sum(slice_indices)>0:
+            y_val_sepsis[i]=1
+        else:
+            y_val_sepsis[i]=0
+
+print(y_val_index[0:100])
+print(y_val_sepsis[0:100])
+
+
+########################
 def sepsis_validation_function(y_actual, y_prediction):
 
     t_diff=y_prediction[0:,0] - y_actual
@@ -120,9 +160,6 @@ x=Dropout(0.2)(x)
 x=Dense(64, activation='relu')(x)
 x=Dropout(0.2)(x)
 
-x=Dense(64, activation='relu')(x)
-x=Dropout(0.2)(x)
-
 x=Dense(32, activation='relu')(x)
 h=Flatten()(x)
 
@@ -147,9 +184,9 @@ sepsis_model.compile(
 
 history= sepsis_model.fit(x_train,
     [y_train_sepsis,y_train_index],
-    epochs=10,
+    epochs=100,
     batch_size=1,
-    validation_split=0.2,
+    validation_data=(validation_x,[y_val_sepsis,y_val_index])
     )
     #validation_data=(x_validation,y_validation))
 
