@@ -1,8 +1,9 @@
 import tensorflow as tf 
 import numpy as np
 import matplotlib.pyplot as plt
+import keras
 from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import Dense, Dropout, LSTM , Flatten
+from tensorflow.keras.layers import Dense, Dropout, LSTM , Flatten, LeakyReLU
 from tensorflow.keras.callbacks import TensorBoard
 #from tensorflow.keras.callbacks import ModelCheckpoints
 from tensorflow.keras.layers import TimeDistributed
@@ -154,13 +155,16 @@ x= Dense(256, batch_size=1, input_shape=(43,8), activation='relu')(input_layer) 
 x=Dropout(0.2)(x)
 
 
-x=Dense(128, activation='relu')(x)
+x=Dense(128)(x)
+x=LeakyReLU(alpha=0.1)(x)
 x=Dropout(0.2)(x)
 
-x=Dense(64, activation='relu')(x)
+x=Dense(64)(x)
+x=LeakyReLU(alpha=0.1)(x)
 x=Dropout(0.2)(x)
 
-x=Dense(32, activation='relu')(x)
+x=Dense(32)(x)
+x=LeakyReLU(alpha=0.1)(x)
 h=Flatten()(x)
 
 dnn=Model(input_layer,h)
@@ -170,27 +174,27 @@ dnn_out=dnn(input_layer)
 
 sepsis_flag=Dense(1, activation='sigmoid')(dnn_out) #model.add(TimeDistributed(Dense(1, activation='sigmoid')))
 sepsis_index=Dense(1, activation='relu')(dnn_out)
-sepsis_model=Model(inputs=input_layer, outputs=[sepsis_flag, sepsis_index])
+model=Model(inputs=input_layer, outputs=[sepsis_flag, sepsis_index])
 #return Model(input=input_shape, output=[sepsis_flag, sepsis_index])
-sepsis_model.summary()
+model.summary()
 opt=tf.keras.optimizers.Adam(lr=0.000001, decay=1e-6)
 
-sepsis_model.compile(
+model.compile(
     optimizer=opt,
     loss=['binary_crossentropy','mean_squared_error'],
     metrics=['accuracy']
     #loss_weights=[0, 1]
 )
 
-history= sepsis_model.fit(x_train,
+history= model.fit(x_train,
     [y_train_sepsis,y_train_index],
-    epochs=100,
+    epochs=10,
     batch_size=1,
     validation_data=(validation_x,[y_val_sepsis,y_val_index])
     )
     #validation_data=(x_validation,y_validation))
 
-output=sepsis_model.predict(x_train, batch_size=1)
+output=model.predict(x_train, batch_size=1)
 print(np.amax(output[0]))
 print(np.amin(output[0]))
 print(np.amax(y_train_sepsis))
@@ -220,3 +224,29 @@ plt.show()
 #print(y_prediction_1.shape)
 #print(y_prediction_1)
 #sepsis_validation_function(y_actual,y_prediction)
+
+
+with open("model.json", "w") as file:
+    file.write(model.to_json())
+model.save_weights("weights.h5")
+
+from keras.models import model_from_json
+from keras import backend as K
+import tensorflow as tf
+
+model_file = "model.json"
+weights_file = "weights.h5"
+
+with open(model_file, "r") as file:
+    config = file.read()
+
+K.set_learning_phase(0)
+model = model_from_json(config)
+model.load_weights(weights_file)
+
+saver = tf.train.Saver()
+sess = K.get_session()
+saver.save(sess, "./TF_Model/tf_model")
+
+fw = tf.summary.FileWriter('logs', sess.graph)
+fw.close()
